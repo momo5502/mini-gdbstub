@@ -14,17 +14,41 @@ struct gdbstub_private {
 
     pthread_t tid;
     bool async_io_enable;
+    bool async_io_sleeping;
     void *args;
 };
+
+static inline void async_io_sleep(struct gdbstub_private *priv)
+{
+    __atomic_store_n(&priv->async_io_sleeping, true, __ATOMIC_RELAXED);
+}
+
+static inline void async_io_wakeup(struct gdbstub_private *priv)
+{
+    __atomic_store_n(&priv->async_io_sleeping, false, __ATOMIC_RELAXED);
+}
+
+static inline bool async_io_is_sleeping(struct gdbstub_private *priv)
+{
+    return __atomic_load_n(&priv->async_io_sleeping, __ATOMIC_RELAXED);
+}
 
 static inline void async_io_enable(struct gdbstub_private *priv)
 {
     __atomic_store_n(&priv->async_io_enable, true, __ATOMIC_RELAXED);
+
+    while (async_io_is_sleeping(priv)) {
+        usleep(1000000);
+    }
 }
 
 static inline void async_io_disable(struct gdbstub_private *priv)
 {
     __atomic_store_n(&priv->async_io_enable, false, __ATOMIC_RELAXED);
+
+    while (!async_io_is_sleeping(priv)) {
+        usleep(1000000);
+    }
 }
 
 static inline bool async_io_is_enable(struct gdbstub_private *priv)
@@ -41,8 +65,20 @@ static void *socket_reader(gdbstub_t *gdbstub)
      * which won't procees on any packets. In this case, we read packet
      * in another thread to be able to interrupt the gdbstub. */
     while (!__atomic_load_n(&thread_stop, __ATOMIC_RELAXED)) {
-        if (async_io_is_enable(gdbstub->priv) &&
-            conn_try_recv_intr(&gdbstub->priv->conn)) {
+        if (!async_io_is_enable(gdbstub->priv)) {
+            if (!async_io_is_sleeping(gdbstub->priv)) {
+                async_io_sleep(gdbstub->priv);
+            }
+
+            usleep(1000000);
+            continue;
+        }
+
+        if (async_io_is_sleeping(gdbstub->priv)) {
+            async_io_wakeup(gdbstub->priv);
+        }
+
+        if (conn_try_recv_intr(&gdbstub->priv->conn)) {
             gdbstub->ops->on_interrupt(args);
         }
     }
@@ -555,6 +591,7 @@ bool gdbstub_run(gdbstub_t *gdbstub, void *args)
 
     /* Create a thread to receive interrupt when running the gdbstub op */
     if (gdbstub->ops->on_interrupt != NULL && gdbstub->priv->tid == 0) {
+        async_io_sleep(gdbstub->priv);
         async_io_disable(gdbstub->priv);
         pthread_create(&gdbstub->priv->tid, NULL, (void *) socket_reader,
                        (void *) gdbstub);

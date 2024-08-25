@@ -29,10 +29,10 @@ typedef HANDLE pthread_t;
 #define pthread_create(a, b, c, d) *(a) = CreateThread(NULL, 0, c, d, NULL, NULL)
 
 #define __ATOMIC_RELAXED 1
-#define __atomic_store_n(a, b, c) InterlockedExchange((volatile LONG *)(a), (b))
-#define __atomic_load_n(a, b) InterlockedAdd((volatile LONG *)(a), 0)
+#define __atomic_store_n(a, b, c) InterlockedExchange8((volatile CHAR *) (a), (b))
+#define __atomic_load_n(a, b) InterlockedExchange8((volatile CHAR *) (a), 0)
 
-//_Static_assert(sizeof(bool) == 4, "Bad bool size");
+#define usleep(x) Sleep(x / 1000000)
 
 #else
 
