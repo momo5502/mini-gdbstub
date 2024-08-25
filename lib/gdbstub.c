@@ -378,6 +378,9 @@ static void process_vpacket(gdbstub_t *gdbstub, char *payload)
         char *str_c = (gdbstub->ops->cont == NULL) ? "" : "c;";
         sprintf(packet_str, VCONT_DESC, str_s, str_c);
 
+        // IDA pro gets confused if the reply arrives too early :(
+        usleep(1000000 * 1000);
+
         conn_send_pktstr(&gdbstub->priv->conn, packet_str);
     } else {
         conn_send_pktstr(&gdbstub->priv->conn, "");
