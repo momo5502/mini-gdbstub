@@ -137,11 +137,16 @@ bool conn_try_recv_intr(conn_t *conn)
     if (nread != 1)
         return false;
 
+    if (ch == '+') {
+        return false;
+    }
+
     /* FIXME: The character must be INTR_CHAR, otherwise the library
      * may work incorrectly. However, I'm not sure if this implementation
      * can always meet our expectation (concurrent is so hard QAQ). */
+    //assert(ch == INTR_CHAR);
     assert(ch == INTR_CHAR);
-    return true;
+    return ch == INTR_CHAR;
 }
 
 void conn_send_str(conn_t *conn, char *str)

@@ -30,7 +30,7 @@ typedef HANDLE pthread_t;
 
 #define __ATOMIC_RELAXED 1
 #define __atomic_store_n(a, b, c) InterlockedExchange8((volatile CHAR *) (a), (b))
-#define __atomic_load_n(a, b) InterlockedExchange8((volatile CHAR *) (a), 0)
+#define __atomic_load_n(a, b) InterlockedOr8((volatile CHAR *) (a), 0)
 
 #define usleep(x) Sleep(x / 1000000)
 

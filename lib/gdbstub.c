@@ -61,16 +61,17 @@ static void *socket_reader(gdbstub_t *gdbstub)
 {
     void *args = gdbstub->priv->args;
 
-    /* This thread will only works when running the gdbstub routine,
+    /* This thread will only work when running the gdbstub routine,
      * which won't procees on any packets. In this case, we read packet
      * in another thread to be able to interrupt the gdbstub. */
     while (!__atomic_load_n(&thread_stop, __ATOMIC_RELAXED)) {
+        usleep(1000000);
+
         if (!async_io_is_enable(gdbstub->priv)) {
             if (!async_io_is_sleeping(gdbstub->priv)) {
                 async_io_sleep(gdbstub->priv);
             }
 
-            usleep(1000000);
             continue;
         }
 
@@ -80,6 +81,7 @@ static void *socket_reader(gdbstub_t *gdbstub)
 
         if (conn_try_recv_intr(&gdbstub->priv->conn)) {
             gdbstub->ops->on_interrupt(args);
+            async_io_disable(gdbstub->priv);
         }
     }
 
