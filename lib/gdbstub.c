@@ -7,6 +7,7 @@
 #include "gdb_signal.h"
 #include "utils/csum.h"
 #include "utils/translate.h"
+#include "utils/win32.h"
 
 struct gdbstub_private {
     conn_t conn;
@@ -54,6 +55,10 @@ bool gdbstub_init(gdbstub_t *gdbstub,
                   arch_info_t arch,
                   char *s)
 {
+#ifdef _MSC_VER
+    WSADATA wsa_data;
+#endif
+
     if (s == NULL || ops == NULL)
         return false;
 
@@ -83,8 +88,15 @@ bool gdbstub_init(gdbstub_t *gdbstub,
         }
     }
 
+#ifdef _MSC_VER
+    if (WSAStartup(MAKEWORD(2, 2), &wsa_data)) {
+        return false;
+    }
+#endif
+
     if (!conn_init(&gdbstub->priv->conn, addr_str, port)) {
         free(addr_str);
+        WSACleanup();
         return false;
     }
     free(addr_str);
@@ -190,7 +202,7 @@ static void process_reg_write_one(gdbstub_t *gdbstub, char *payload, void *args)
 static void process_mem_read(gdbstub_t *gdbstub, char *payload, void *args)
 {
     size_t maddr, mlen;
-    assert(sscanf(payload, "%lx,%lx", &maddr, &mlen) == 2);
+    assert(sscanf(payload, "%zx,%zx", &maddr, &mlen) == 2);
 #ifdef DEBUG
     printf("mem read = addr %lx / len %lx\n", maddr, mlen);
 #endif
@@ -215,7 +227,7 @@ static void process_mem_write(gdbstub_t *gdbstub, char *payload, void *args)
         *content = '\0';
         content++;
     }
-    assert(sscanf(payload, "%lx,%lx", &maddr, &mlen) == 2);
+    assert(sscanf(payload, "%zx,%zx", &maddr, &mlen) == 2);
 #ifdef DEBUG
     printf("mem write = addr %lx / len %lx\n", maddr, mlen);
     printf("mem write = content %s\n", content);
@@ -245,7 +257,7 @@ static void process_mem_xwrite(gdbstub_t *gdbstub,
         *content = '\0';
         content++;
     }
-    assert(sscanf(payload, "%lx,%lx", &maddr, &mlen) == 2);
+    assert(sscanf(payload, "%zx,%zx", &maddr, &mlen) == 2);
     assert(unescape(content, (char *) packet_end) == (int) mlen);
 #ifdef DEBUG
     printf("mem xwrite = addr %lx / len %lx\n", maddr, mlen);
@@ -551,6 +563,10 @@ bool gdbstub_run(gdbstub_t *gdbstub, void *args)
     while (true) {
         conn_recv_packet(&gdbstub->priv->conn);
         packet_t *pkt = conn_pop_packet(&gdbstub->priv->conn);
+        if (!pkt) {
+            return true;
+        }
+
 #ifdef DEBUG
         printf("packet = %s\n", pkt->data);
 #endif
@@ -582,4 +598,5 @@ void gdbstub_close(gdbstub_t *gdbstub)
 
     conn_close(&gdbstub->priv->conn);
     free(gdbstub->priv);
+    WSACleanup();
 }

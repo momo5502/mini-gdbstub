@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include "utils/win32.h"
 
 static void pktbuf_clear(pktbuf_t *pktbuf)
 {

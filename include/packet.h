@@ -3,7 +3,12 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+
+#ifndef _MSC_VER
 #include <unistd.h>
+#else
+#include "utils/win32.h"
+#endif
 
 #define STR_ACK "+"
 #define INTR_CHAR '\x03'

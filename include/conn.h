@@ -1,15 +1,20 @@
 #ifndef CONN_H
 #define CONN_H
 
+#include "winsock.h"
+
+#ifndef _MSC_VER
 #include <pthread.h>
+#endif
+
 #include <stdbool.h>
 #include "packet.h"
 
 #define MAX_SEND_PACKET_SIZE (0x400)
 
 typedef struct {
-    int listen_fd;
-    int socket_fd;
+    socket_t listen_fd;
+    socket_t socket_fd;
 
     pktbuf_t pktbuf;
 } conn_t;

@@ -1,13 +1,30 @@
 #include "conn.h"
-#include <arpa/inet.h>
 #include <assert.h>
-#include <netinet/in.h>
-#include <poll.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_NO_POSIX_ERROR_CODES
+#define _CRT_NONSTDC_NO_WARNINGS
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+#include <afunix.h>
+#define poll WSAPoll
+#define close closesocket
+#define read(a, b, c) recv(a,b,c,0)
+#define write(a, b, c) send(a, b, c, 0)
+typedef int ssize_t;
+#else
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#endif
 #include "utils/csum.h"
 #include "utils/log.h"
 
@@ -37,7 +54,7 @@ bool conn_init(conn_t *conn, char *addr_str, int port)
         return false;
 
     struct in_addr addr_ip;
-    if (inet_aton(addr_str, &addr_ip) != 0) {
+    if (inet_pton(AF_INET, addr_str, &addr_ip) != 0) {
         struct sockaddr_in addr;
         addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = addr_ip.s_addr;
