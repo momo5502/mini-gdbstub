@@ -73,6 +73,11 @@ static inline bool async_io_is_enable(struct gdbstub_private *priv)
     return __atomic_load_n(&priv->async_io_enable, __ATOMIC_RELAXED);
 }
 
+static void rt_assert(int condition)
+{
+    assert(condition);
+}
+
 static void *socket_reader(gdbstub_t *gdbstub)
 {
     void *args = gdbstub->priv->args;
@@ -186,7 +191,7 @@ static void process_reg_read_one(gdbstub_t *gdbstub, char *payload, void *args)
     size_t reg_sz = gdbstub->arch.reg_byte;
     size_t reg_value;
 
-    assert(sscanf(payload, "%x", &regno) == 1);
+    rt_assert(sscanf(payload, "%x", &regno) == 1);
     int ret = gdbstub->ops->read_reg(args, regno, &reg_value);
 #ifdef DEBUG
     printf("reg read = regno %d data %lx\n", regno, reg_value);
@@ -236,9 +241,9 @@ static void process_reg_write_one(gdbstub_t *gdbstub, char *payload, void *args)
         data_str++;
     }
 
-    assert(strlen(data_str) == gdbstub->arch.reg_byte * 2);
-    assert(sizeof(data) >= gdbstub->arch.reg_byte);
-    assert(sscanf(regno_str, "%x", &regno) == 1);
+    rt_assert(strlen(data_str) == gdbstub->arch.reg_byte * 2);
+    rt_assert(sizeof(data) >= gdbstub->arch.reg_byte);
+    rt_assert(sscanf(regno_str, "%x", &regno) == 1);
     str_to_hex(data_str, (uint8_t *) &data, gdbstub->arch.reg_byte);
 #ifdef DEBUG
     printf("reg write = regno %d / data %lx\n", regno, data);
@@ -256,7 +261,7 @@ static void process_reg_write_one(gdbstub_t *gdbstub, char *payload, void *args)
 static void process_mem_read(gdbstub_t *gdbstub, char *payload, void *args)
 {
     size_t maddr, mlen;
-    assert(sscanf(payload, "%zx,%zx", &maddr, &mlen) == 2);
+    rt_assert(sscanf(payload, "%zx,%zx", &maddr, &mlen) == 2);
 #ifdef DEBUG
     printf("mem read = addr %lx / len %lx\n", maddr, mlen);
 #endif
@@ -281,7 +286,7 @@ static void process_mem_write(gdbstub_t *gdbstub, char *payload, void *args)
         *content = '\0';
         content++;
     }
-    assert(sscanf(payload, "%zx,%zx", &maddr, &mlen) == 2);
+    rt_assert(sscanf(payload, "%zx,%zx", &maddr, &mlen) == 2);
 #ifdef DEBUG
     printf("mem write = addr %lx / len %lx\n", maddr, mlen);
     printf("mem write = content %s\n", content);
@@ -311,8 +316,8 @@ static void process_mem_xwrite(gdbstub_t *gdbstub,
         *content = '\0';
         content++;
     }
-    assert(sscanf(payload, "%zx,%zx", &maddr, &mlen) == 2);
-    assert(unescape(content, (char *) packet_end) == (int) mlen);
+    rt_assert(sscanf(payload, "%zx,%zx", &maddr, &mlen) == 2);
+    rt_assert(unescape(content, (char *) packet_end) == (int) mlen);
 #ifdef DEBUG
     printf("mem xwrite = addr %lx / len %lx\n", maddr, mlen);
     for (size_t i = 0; i < mlen; i++) {
@@ -412,7 +417,7 @@ static void process_del_break_points(gdbstub_t *gdbstub,
                                      void *args)
 {
     size_t type, addr, kind;
-    assert(sscanf(payload, "%zx,%zx,%zx", &type, &addr, &kind) == 3);
+    rt_assert(sscanf(payload, "%zx,%zx,%zx", &type, &addr, &kind) == 3);
 
 #ifdef DEBUG
     printf("remove breakpoints = %zx %zx %zx\n", type, addr, kind);
@@ -430,7 +435,7 @@ static void process_set_break_points(gdbstub_t *gdbstub,
                                      void *args)
 {
     size_t type, addr, kind;
-    assert(sscanf(payload, "%zx,%zx,%zx", &type, &addr, &kind) == 3);
+    rt_assert(sscanf(payload, "%zx,%zx,%zx", &type, &addr, &kind) == 3);
 
 #ifdef DEBUG
     printf("set breakpoints = %zx %zx %zx\n", type, addr, kind);
