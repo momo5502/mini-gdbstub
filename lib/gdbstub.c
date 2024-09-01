@@ -423,7 +423,7 @@ static void process_del_break_points(gdbstub_t *gdbstub,
     printf("remove breakpoints = %zx %zx %zx\n", type, addr, kind);
 #endif
 
-    bool ret = gdbstub->ops->del_bp(args, addr, type);
+    bool ret = gdbstub->ops->del_bp(args, addr, type, kind);
     if (ret)
         conn_send_pktstr(&gdbstub->priv->conn, "OK");
     else
@@ -441,7 +441,7 @@ static void process_set_break_points(gdbstub_t *gdbstub,
     printf("set breakpoints = %zx %zx %zx\n", type, addr, kind);
 #endif
 
-    bool ret = gdbstub->ops->set_bp(args, addr, type);
+    bool ret = gdbstub->ops->set_bp(args, addr, type, kind);
     if (ret)
         conn_send_pktstr(&gdbstub->priv->conn, "OK");
     else

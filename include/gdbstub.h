@@ -22,6 +22,10 @@ typedef enum {
 
 typedef enum {
     BP_SOFTWARE = 0,
+    BP_HARDWARE_EXEC = 1,
+    BP_HARDWARE_WRITE = 2,
+    BP_HARDWARE_READ = 3,
+    BP_HARDWARE_READ_WRITE = 4,
 } bp_type_t;
 
 struct target_ops {
@@ -31,8 +35,8 @@ struct target_ops {
     int (*write_reg)(void *args, int regno, size_t value);
     int (*read_mem)(void *args, size_t addr, size_t len, void *val);
     int (*write_mem)(void *args, size_t addr, size_t len, void *val);
-    bool (*set_bp)(void *args, size_t addr, bp_type_t type);
-    bool (*del_bp)(void *args, size_t addr, bp_type_t type);
+    bool (*set_bp)(void *args, size_t addr, bp_type_t type, size_t size);
+    bool (*del_bp)(void *args, size_t addr, bp_type_t type, size_t size);
     void (*on_interrupt)(void *args);
 };
 
