@@ -16,7 +16,7 @@
 #pragma comment(lib, "ws2_32.lib")
 
 typedef int ssize_t;
-typedef SOCKET socket_t;
+//typedef SOCKET socket_t;
 
 #define poll WSAPoll
 #define close closesocket
@@ -26,7 +26,7 @@ typedef SOCKET socket_t;
 typedef HANDLE pthread_t;
 
 #define pthread_join(a, b) WaitForSingleObject(a, INFINITE)
-#define pthread_create(a, b, c, d) *(a) = CreateThread(NULL, 0, c, d, NULL, NULL)
+#define pthread_create(a, b, c, d) *(a) = CreateThread(NULL, 0, c, d, 0, NULL)
 
 #define __ATOMIC_RELAXED 1
 #define __atomic_store_n(a, b, c) InterlockedExchange8((volatile CHAR *) (a), (b))
