@@ -155,7 +155,9 @@ bool gdbstub_init(gdbstub_t *gdbstub,
 
     if (!conn_init(&gdbstub->priv->conn, addr_str, port)) {
         free(addr_str);
+#ifdef _MSC_VER
         WSACleanup();
+#endif
         return false;
     }
     free(addr_str);
@@ -664,5 +666,7 @@ void gdbstub_close(gdbstub_t *gdbstub)
 
     conn_close(&gdbstub->priv->conn);
     free(gdbstub->priv);
+#ifdef _MSC_VER
     WSACleanup();
+#endif
 }
